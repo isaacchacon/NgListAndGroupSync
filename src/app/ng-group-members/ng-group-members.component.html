@@ -1,0 +1,53 @@
+<div *ngIf="group">
+<input type="button" style="margin-bottom:10px;" class="btn btn-primary" (click)="onClosed.emit();"  value="Go Back" />
+	<div class="well">
+		<h2>Add / Remove People for: {{group.Title}}</h2>	
+		<div  style="padding-bottom:5px;">
+			<strong>Associated SharePoint Group:</strong>
+			{{group.SpGroupName}}
+		</div>
+		<div *ngIf="successMessage" class="alert alert-success">
+			<strong>Success!!!</strong> {{successMessage}}
+		</div>
+		<div>
+			<div class="form-group" tooltip="You can enter one email or multiple emails separated by semi-colon ';'">
+				<label>Enter email(s) to add to this security / mailing group:</label>
+				<input [(ngModel)]="emailsToAdd"  class="form-control" type="text" (keyup.enter)="add();"  placeholder="You can enter one email or multiple emails separated by semi-colon ';'"  tooltip="You can enter one email or multiple emails separated by semi-colon ';'">
+				<div *ngIf="errorAdding" class="alert alert-danger" >
+					{{errorAdding}}
+				</div>
+			</div>	
+				<input type="button" class="btn btn-primary" (click)="add();" value="Add Email(s)" />
+			<div style="margin-top:10px;">
+				<input style="margin-bottom:10px;" type="button"  (click)="removeSelected();"  class="btn btn-primary"  value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)" />
+				Total count of emails: {{group.Workers.length}}
+				<div style="word-wrap:break-word;" class="alert alert-info" *ngIf="emailsToErase&&emailsToErase.length>0&& emailsToErase.length!=group.Workers.length" >
+					<p><strong>You are getting ready to erase {{emailsToErase.length}} emails:</strong></p>
+					<span *ngFor="let a of emailsToErase">{{a}},</span>
+					<p><strong>Click on 'Remove Selected' to confirm permanent deletion.</strong></p>
+				</div>
+				<div style="word-wrap:break-word;" class="alert alert-info" *ngIf="emailsToErase&&emailsToErase.length>0&& emailsToErase.length==group.Workers.length">
+					<p><strong>You can't erase all emails, at least one contact email must remain in this group.</strong></p>
+				</div>
+				<div *ngIf="errorRemoving" class="alert alert-danger">
+					{{errorRemoving}}
+				</div>
+				<div class="list-group" style="max-height:300px;overflow-y:auto">
+					<a href="#" [class.taxActive]="emailsToErase.indexOf(workerEntry.getEmail())>=0" class="list-group-item"  (click)="onWorkerClicked(workerEntry);" *ngFor="let workerEntry of group.Workers" >
+						<input style="margin-right:35px;"  type="checkbox" value="{{workerEntry.getEmail()}}" [checked]="emailsToErase.indexOf(workerEntry.getEmail())>=0" />{{workerEntry.getEmail()}}
+					</a>
+				</div>
+				<div *ngIf="errorRemoving" class="alert alert-danger">
+					{{errorRemoving}}
+				</div>
+				<input style="margin-top:10px;" type="button" class="btn btn-primary" (click)="removeSelected();" value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)" />
+				Total count of emails: {{group.Workers.length}}
+			</div>
+			
+		</div>
+		<div  *ngIf="successMessage" class="alert alert-success">
+			<strong>Success!!!</strong> {{successMessage}}
+		</div>
+	</div>
+<input type="button" class="btn btn-primary" (click)="onClosed.emit();"  value="Go Back" />
+</div>

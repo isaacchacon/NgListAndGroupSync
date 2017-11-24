@@ -1,5 +1,7 @@
 import {SharepointListsWebService} from 'ng-tax-share-point-web-services-module';
 import {GroupEntry} from './group-entry';
+import {WorkerEntry} from './worker-entry';
+import {SharepointListItem} from 'ng-tax-share-point-web-services-module';
 
 export class ListAndGroupManagement{
 
@@ -8,30 +10,45 @@ export class ListAndGroupManagement{
 	}
 	
 	loadListsAndGroups():Promise<GroupEntry[]>{
-		return this.sharepointListsWebService.getListItems(GroupEntry, null, "<Query><OrderBy><FieldRef Name ='Title'/></OrderBy></Query>", null )
+		let resultfromConfigList  =this.sharepointListsWebService.getListItems(GroupEntry, null, "<Query><OrderBy><FieldRef Name ='Title'/></OrderBy></Query>", null )
 		.then(
 			function(groupEntrys){
-				let entries:GroupEntry[] =<GroupEntry[]> groupEntrys;
-				for(let entry of entries){
-					switch (entry.ID){
-							case 1:
-							entry.Workers= [{ID:1,Email:"jorge.gutierrez@tax.state.oh.us"},{ID:2, Email:"brent.wallace@tax.state.oh.us"} ];
-							break;
-							case 2:
-							entry.Workers= [{ID:1,Email:"frank.tolbard@tax.state.oh.us"} ];
-							break;
-							case 3: 
-							entry.Workers = [{ID:1,Email:"jorge.gutierrez@tax.state.oh.us"},{ID:2, Email:"brent.wallace@tax.state.oh.us"},{ID:3,Email: "jack.lewis@tax.state.oh.us"},
-				{ID:4,Email: "mahendra.daga@tax.state.oh.us"},{ID:5, Email:"stacy.ours@tax.state.oh.us"}];
-							break;
-							case 4:
-							default:
-							entry.Workers = [{ID:1,Email:"mark.walker@tax.state.oh.us"}, {ID:2,Email:"jorge.gutierrez@tax.state.oh.us"} ];
-							break;							
-					}					
+				// a little bit of preparation before we invoke the next web service. 
+				// need to setup the static parameters for this WorkerEntry Object
+				let entries:GroupEntry[];
+				if(groupEntrys && groupEntrys.length >0){
+					entries=<GroupEntry[]> groupEntrys;
+					WorkerEntry.siteUrl = entries[0].getSiteUrl();
+					WorkerEntry.listName = entries[0]["WorkerListName"]
+					WorkerEntry.filterColumn = entries[0]["FilterColumn"];
+					WorkerEntry.emailColumn = entries[0]["EmailColumn"];
 				}
-				return entries;
+				else  return Promise.reject("Error ListAndGroupManagement1")
+				return Promise.resolve(entries);
 			}
 		);
+		
+		let resultFromWorkersList  = resultfromConfigList.then(()=>  this.sharepointListsWebService.getListItems(WorkerEntry, null, "<Query><OrderBy><FieldRef Name ='"+WorkerEntry.emailColumn+"'/></OrderBy></Query>", null ));
+		let bundledPromises = [resultfromConfigList, resultFromWorkersList];
+		return Promise.all(bundledPromises).then(
+			function(bothPromises){
+				//once we have the 2 result sets, we match them and merge them in a single object.
+				if(bothPromises&& bothPromises.length && bothPromises.length==2){
+					let groupEntries:GroupEntry[] = <GroupEntry[]> bothPromises[0];
+					let workerEntries: WorkerEntry[] = <WorkerEntry[]>bothPromises[1];
+					for(let groupEntry of groupEntries){
+						groupEntry.Workers = workerEntries.filter(
+						function(worker:WorkerEntry){
+							return worker[WorkerEntry.filterColumn]== groupEntry["Title"];
+						});
+					}
+					return Promise.resolve(groupEntries);
+				}
+				else return Promise.reject("Error ListAndGroupManagement2")
+			}
+		);
+		
+		//return <Promise<GroupEntry[]>>resultfromConfigList;
+		
 	}
 }

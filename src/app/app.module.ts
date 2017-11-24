@@ -5,10 +5,12 @@ import {HttpModule} from '@angular/http';
 import { AppComponent } from './app.component';
 
 import {NgTaxServices} from 'ng-tax-share-point-web-services-module';
+import { NgGroupMembersComponent } from './ng-group-members/ng-group-members.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    NgGroupMembersComponent
   ],
   imports: [
     BrowserModule,FormsModule ,HttpModule,NgTaxServices.forRoot()
