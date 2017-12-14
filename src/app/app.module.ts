@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import {FormsModule} from  '@angular/forms';
-import {HttpModule} from '@angular/http';
+import {HttpClientModule} from '@angular/common/http';
 import { AppComponent } from './app.component';
 
 import {NgTaxServices} from 'ng-tax-share-point-web-services-module';
@@ -13,7 +13,7 @@ import { NgGroupMembersComponent } from './ng-group-members/ng-group-members.com
     NgGroupMembersComponent
   ],
   imports: [
-    BrowserModule,FormsModule ,HttpModule,NgTaxServices.forRoot()
+    BrowserModule,HttpClientModule,FormsModule,NgTaxServices.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]

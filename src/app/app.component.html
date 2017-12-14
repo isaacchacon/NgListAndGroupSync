@@ -12,21 +12,23 @@
 				<table style="table-layout:fixed;" class="table table-striped table-hover table-condensed">
 					<thead>
 						<tr>						
-							<th style="width:20%;">Group Name</th>
-							<th style="width:30%;">SPGroup</th>
-							<th style="width:10%;">Members</th>
-							<th style="width:40%;">Emails</th>
+							<th style="width:12%;">Referral Type</th>
+							<th style="width:6%">Manage</th>
+							<th style="width:38%;">Owners</th>
+							<th style="width:6%;">Manage</th>
+							<th style="width:38%;">Members</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr [class.taxTableRow]="true" *ngFor="let group of groups;" (click)="onSelect(group)" [class.info]="group===selectedGroup">
+						<tr *ngFor="let group of groups;" [class.info]="group===selectedGroup">
 							<td style="word-wrap:break-word;">{{group.Title}} </td>
-							<td style="word-wrap:break-word;">{{group.ID}}-{{group.SpGrpName}} </td>
-							<td style="word-wrap:break-word;">{{group.Workers.length}} </td>
-							<td style="word-wrap:break-word;">{{showWorkersEmails(group.Workers)}}</td>
+							<td><a class="taxPointerCursor" href="{{group?.OwnerGroupLink}}">Manage Owners</a><div>({{group?.Owners?.length}})</div></td>
+							<td><div style="font-weight:bolder;">{{group.OwnerGroupName}}</div><span [class.taxSearchFound]="searchTerm&&filterOwnerEntry(owner)" *ngFor="let owner of group.Owners">{{(owner.email?owner.email:owner.displayName)+"; "}}</span></td>
+							<td><a class="taxPointerCursor" (click)="onSelect(group)">Manage Members</a><div>({{group.Workers.length}})</div></td>
+							<td><span [class.taxSearchFound]="searchTerm&&filterWorkerEntry(worker)" *ngFor="let worker of group?.Workers">{{worker.getEmail()+"; "}}</span></td>
 						</tr>
 					</tbody>
 				</table>
 				</div>
-				<app-ng-group-members *ngIf="selectedGroup"  (onClosed)="closeSelectedGroup();" [group]="selectedGroup"  ></app-ng-group-members>
+				<app-ng-group-members *ngIf="selectedGroup"  (onClosed)="closeSelectedGroup();" [childGroup]="selectedGroup" [groups]="groups" [businessClass]="listAndGroupManagement"  ></app-ng-group-members>
 		</div>

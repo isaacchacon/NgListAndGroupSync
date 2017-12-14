@@ -1,6 +1,7 @@
 import {SharepointListItem} from 'ng-tax-share-point-web-services-module';
 import {WorkerEntry} from './worker-entry';
 import {ListItemInterface} from './list-item-interface';
+import {TaxSpUser} from 'ng-tax-share-point-web-services-module';
 
 export class GroupEntry extends SharepointListItem implements ListItemInterface{
 	
@@ -9,13 +10,17 @@ export class GroupEntry extends SharepointListItem implements ListItemInterface{
 	}
 	
 	getItemProperties():string[]{
-		return["SpGrpName","Title","WorkerListName","FilterColumn","EmailColumn"];
+		return["SpGrpName","Title","WorkerListName","FilterColumn","EmailColumn", "OwnerGroupLink", "OwnerGroupName"];
 	}
 
 	Workers:WorkerEntry[];
+	Owners:TaxSpUser[];
+	
+	//This property must be set before consuming this object.
+	static relativeWebUrl:string;
 	
 	getSiteUrl():string{
-		return '/forms/PITRef/';
+		return GroupEntry.relativeWebUrl;
 	}
 	getListName():string{
 		return 'ListAndGroupSyncConfig';
