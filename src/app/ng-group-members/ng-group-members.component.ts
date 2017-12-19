@@ -10,8 +10,8 @@ import {ListAndGroupManagement} from '../list-and-group-management'
     styles:[`.taxActive {background-color: #D9EDF7 !important;}
 			.taxTableRow {cursor:pointer;}
 			
-	`],
-  styleUrls: ['./ng-group-members.component.css']
+	`]
+  //styleUrls: ['./ng-group-members.component.css']
 })
 export class NgGroupMembersComponent implements OnInit {
 	
