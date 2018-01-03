@@ -11,7 +11,7 @@ import {ListAndGroupManagement} from './list-and-group-management'
 import {SharepointUserGroupWebService} from 'ng-tax-share-point-web-services-module';
 import {SharepointListsWebService} from 'ng-tax-share-point-web-services-module';
 import {UrlService} from 'ng-tax-share-point-web-services-module';
-
+declare var window:any;
 
 
 
@@ -20,6 +20,8 @@ import {UrlService} from 'ng-tax-share-point-web-services-module';
   styles:[`.taxActive {background-color: #D9EDF7 !important;}
 			.taxPointerCursor {cursor:pointer;}
 			.taxSearchFound {background-color:yellow;}
+			.container h1{text-align:center;}
+			.table-striped > tbody > tr:nth-of-type(2n+1) {background-color: #f2f2f2;}
 			
 	`],
   templateUrl: './app.component.html'
@@ -79,4 +81,7 @@ export class AppComponent implements OnInit{
 	closeSelectedGroup():void{
 		this.selectedGroup = null;
 	}	
+	exit():void{
+		window.location.href='/';
+	}
 }

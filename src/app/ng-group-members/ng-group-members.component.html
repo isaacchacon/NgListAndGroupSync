@@ -1,10 +1,10 @@
 <div *ngIf="group">
 <input type="button" style="margin-bottom:10px;" class="btn btn-primary" (click)="onClosed.emit();"  value="Go Back" />
 	<div class="well">
-		<h2>Add / Remove People for: {{group.Title}}</h2>	
+		<h2>Add / Remove People for: <strong>{{group.Title}}</strong></h2>	
 		<div  style="padding-bottom:5px;">
-			<strong>Associated SharePoint Group:</strong>
-			{{group.SpGrpName}}
+			Associated SharePoint Group:
+			<strong>{{group.SpGrpName}}</strong>
 		</div>
 		<div *ngIf="successMessage" class="alert alert-success">
 			<strong>Success!!!</strong> {{successMessage}}
