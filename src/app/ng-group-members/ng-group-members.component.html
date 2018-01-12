@@ -1,7 +1,7 @@
 <div *ngIf="group">
 <input type="button" style="margin-bottom:10px;" class="btn btn-primary" (click)="onClosed.emit();"  value="Go Back" />
 	<div class="well">
-		<h2>Add / Remove People for: <strong>{{group.Title}}</strong></h2>	
+		<h3>Add / Remove People for:<strong>{{group.Title}}</strong></h3>	
 		<div  style="padding-bottom:5px;">
 			Associated SharePoint Group:
 			<strong>{{group.SpGrpName}}</strong>
@@ -10,16 +10,35 @@
 			<strong>Success!!!</strong> {{successMessage}}
 		</div>
 		<div>
-			<div class="form-group" tooltip="You can enter one email or multiple emails separated by semi-colon ';'">
-				<label>Enter email(s) to add to this Members / Workers group:</label>
-				<input [(ngModel)]="emailsToAdd"  class="form-control" type="text" (keyup.enter)="add();"  placeholder="You can enter one email or multiple emails separated by semi-colon ';'"  tooltip="You can enter one email or multiple emails separated by semi-colon ';'">
+			<div class="form-group" tooltip="Start typing a person's name / email">
+				<label>Person to be added to this group:</label>
+				<input [(ngModel)]="emailsToAdd"
+				[class.taxResolvedPicker]="isResolved" [class.taxUnresolvedPicker]="entryNotValid" [matAutocomplete]="auto" #term
+				[matTooltip]="pickerTooltip"  matTooltipClass="mattooltiptax" matTooltipShowDelay="1500" (keydown)="detectKeyDown($event);"  
+				(keyup.enter)="userHitEnter= true;search(term.value ,$event);" (blur) = "blurEvent(term.value);" (keyup)="search(term.value, $event);"
+				class="taxPeoplePickerText form-control" type="text"  placeholder="Start typing a person's name or email"  tooltip="Start typing a person's name or email">
+				<mat-progress-bar mode="indeterminate"  *ngIf="numberOfActiveRequests>0" ></mat-progress-bar>
 				<div *ngIf="errorAdding" class="alert alert-danger" >
 					{{errorAdding}}
 				</div>
+				<div *ngIf="currentItems.length==0&& (!isResolved)&& emailsToAdd?.length>1&& numberOfActiveRequests ==0&&(!hideNoResultsFound)" class="alert alert-danger" >
+					No resluts found for '{{emailsToAdd}}'
+				</div>
+				<mat-autocomplete #auto="matAutocomplete">
+					<div *ngIf="!isResolved">
+					<mat-option  *ngFor="let item of items | async" [value]="item.title"
+					(onSelectionChange)="setEmployee(item, $event)" [matTooltip]="item.email+' - '+item.name">
+						<div class="taxMainResultPicker">{{item.title}}</div>
+						<div class="taxSecResultPicker">{{item.jobTitle}}</div>
+					</mat-option>
+					</div>
+				</mat-autocomplete>
 			</div>	
-				<input type="button" class="btn btn-primary" [disabled]="!emailsToAdd" (click)="add();" value="Add Email(s)" />
+				<input type="button" class="btn btn-primary" [disabled]="!isResolved||processsingAdding" (click)="add();" value="Add the above person" />
+				<mat-spinner *ngIf="processingAdding" diameter="22" ></mat-spinner>
 			<div style="margin-top:10px;">
-				<input style="margin-bottom:10px;" type="button"  (click)="removeSelected();"  class="btn btn-primary"  value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)" />
+				<input style="margin-bottom:10px;" type="button"  (click)="removeSelected();"  class="btn btn-primary"  value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)|| processingDeleting" />
+				<mat-spinner *ngIf="processingDeleting" diameter="22" ></mat-spinner>
 				
 				<div style="word-wrap:break-word;" class="alert alert-info" *ngIf="emailsToErase&&emailsToErase.length>0&& emailsToErase.length!=group.Workers.length" >
 					<p><strong>You are getting ready to erase {{emailsToErase.length}} emails:</strong></p>
@@ -41,7 +60,10 @@
 				<div *ngIf="errorRemoving" class="alert alert-danger">
 					{{errorRemoving}}
 				</div>
-				<input style="margin-top:10px;" type="button" class="btn btn-primary" (click)="removeSelected();" value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)" />
+				<input style="margin-top:10px;" type="button" class="btn btn-primary" (click)="removeSelected();" value="Remove Selected" [disabled]="(!(emailsToErase&&(emailsToErase.length>0)))|| (group.Workers.length==emailsToErase.length)|| processingDeleting" />
+				<mat-spinner *ngIf="processingDeleting" diameter="22" ></mat-spinner>
+				
+				
 				
 			</div>
 			

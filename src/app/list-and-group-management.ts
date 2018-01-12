@@ -1,6 +1,7 @@
 import {SharepointListsWebService} from 'ng-tax-share-point-web-services-module';
 import {SharepointUserGroupWebService} from 'ng-tax-share-point-web-services-module';
 import {UrlService} from 'ng-tax-share-point-web-services-module';
+import {UserInfoListEntry} from 'ng-tax-share-point-web-services-module';
 import {GroupEntry} from './group-entry';
 import {WorkerEntry} from './worker-entry';
 import {SharepointListItem} from 'ng-tax-share-point-web-services-module';
@@ -13,6 +14,28 @@ export class ListAndGroupManagement{
 				private urlService:UrlService){
 		
 	}
+	
+	//Will search for an item that contains the provided term in either the display name ,the 
+	// email or the Account Number. It is case insensitive search!!! What else could you ask for!! ? ?
+	searchForPeople(term:string): Promise<SharepointListItem[]>{
+		if(term){
+			let trimmedTerm = term.trim();
+			if(trimmedTerm.length>1){			
+				if(trimmedTerm){
+					return this.sharepointListsWebService.getListItems(UserInfoListEntry, null ,
+						"<Query><OrderBy><FieldRef Name ='Title'/></OrderBy><Where><And><Eq><FieldRef Name='ContentType' />"+
+						"<Value Type='Text'>Person</Value></Eq><Or><Or><Contains><FieldRef Name='EMail' /><Value Type='Text'>"+
+						trimmedTerm+"</Value></Contains><Contains><FieldRef Name='Title' /><Value Type='Text'>"+
+						trimmedTerm+"</Value></Contains></Or><Contains><FieldRef Name='Name' /><Value Type='Text'>"+
+						trimmedTerm+"</Value></Contains></Or></And></Where></Query>", null);
+				}
+			}
+		}
+		
+		//if any of the condition were false, return empty array.
+		return Promise.resolve([]);
+	}
+	
 	
 	//Method to load the configuration list and joins it with the workers list. 
 	//This is the load method.(first method) to be called.
@@ -163,10 +186,21 @@ export class ListAndGroupManagement{
 		}
 		
 		///next thing to do : CONSUME REMOVE LIST ITEM.	
-		let removeListItemsPromise= this.sharepointListsWebService.removeListItems(workersEntriesToErase).then(
-		(result)=>{
+		let removeListItemsPromise= this.sharepointListsWebService.removeListItems(workersEntriesToErase);
+		
+		///Now need to update the associated SharePoint Group...
+
+		// if(isTest){
+		// promiseOfSpTaxUser = this.getLoginsFromUserProfile(emailsToErase);
+		// }else{
+		let intPromise = this.sharepointUserGroupWebService.getUserLoginFromEmail(emailsToErase,workersEntriesToErase[0].getSiteUrl())
+			.then((spTaxUsers)=>this.sharepointUserGroupWebService
+			 .removeUserCollectionFromGroup(spTaxUsers,group["SpGrpName"],workersEntriesToErase[0].getSiteUrl()));
+
+		return Promise.all([removeListItemsPromise,intPromise]).then((resultsOfBothPromises)=>{
+			let resultFirstPromise :string[] = resultsOfBothPromises[0];
 			//update business objects after success.
-			if(result && result.length ==0){
+			if(resultFirstPromise && resultFirstPromise.length ==0){
 				group.Workers = group.Workers.filter((worker)=>emailsToErase.indexOf(worker.getEmail())<0); 
 				if(otherGroups && otherGroups.length>0){
 					for(let otherGroup of otherGroups){
@@ -180,19 +214,8 @@ export class ListAndGroupManagement{
 					}
 				}
 			}
-			return result;
-		});
-		
-		///Now need to update the associated SharePoint Group...
-
-		// if(isTest){
-		// promiseOfSpTaxUser = this.getLoginsFromUserProfile(emailsToErase);
-		// }else{
-		let intPromise = this.sharepointUserGroupWebService.getUserLoginFromEmail(emailsToErase,workersEntriesToErase[0].getSiteUrl())
-			.then((spTaxUsers)=>this.sharepointUserGroupWebService
-			 .removeUserCollectionFromGroup(spTaxUsers,group["SpGrpName"],workersEntriesToErase[0].getSiteUrl()));
-
-		return Promise.all([removeListItemsPromise,intPromise]).then((x)=> x[0]).catch((error)=>Promise.reject("Error 9223:"+(error.message || error)));	
+			return resultFirstPromise;
+		}).catch((error)=>Promise.reject("Error At RemoveEmails:"+(error.message || error)));	
 	}
 
 
@@ -236,11 +259,23 @@ export class ListAndGroupManagement{
 			}
 		}
 		
+		///1stly, add the items into the list through the webservice: 
+		let promiseOfAddedListItems =  this.sharepointListsWebService.addOrUpdateListItems(workersToAdd);
 		
-		let promiseOfAddedListItems =  this.sharepointListsWebService.addOrUpdateListItems(workersToAdd).then((results)=>{
-			//we will uptade business objects upon success.
-			if(results && results.length >0){
-				for(let result of results){
+		//after taking care of the lists.asmx, then we'll worry about SharePoint group.
+			// if(isTest){
+				// promiseOfSpTaxUser = this.getLoginsFromUserProfile(emailsToAdd);
+			// }else{
+				
+		let promiseOfSpTaxUser = this.sharepointUserGroupWebService.getUserLoginFromEmail(emailsToAdd,group.getSiteUrl())
+		.then((spTaxUsers)=>this.sharepointUserGroupWebService.addUserCollectionToGroup(spTaxUsers,group["SpGrpName"],group.getSiteUrl()));
+		// }
+		
+		//the below promise will return the first call's results. If there is an exception, the catch will show error on either of promises.
+		return Promise.all([promiseOfAddedListItems,promiseOfSpTaxUser]).then((resultBothPromises)=> {
+		let resultFirstPromise :[SharepointListItem,string][] = resultBothPromises[0]
+		if(resultFirstPromise && resultFirstPromise.length >0){
+				for(let result of resultFirstPromise){
 					if(result[1]){
 						//if the error string has something, don't add this item.
 						continue;
@@ -265,17 +300,8 @@ export class ListAndGroupManagement{
 					}
 				}
 			}
-			return results;
-		});
-		
-		//after taking care of the lists.asmx, then we'll worry about SharePoint group.
-			// if(isTest){
-				// promiseOfSpTaxUser = this.getLoginsFromUserProfile(emailsToAdd);
-			// }else{
-		let promiseOfSpTaxUser = this.sharepointUserGroupWebService.getUserLoginFromEmail(emailsToAdd,group.getSiteUrl())
-		.then((spTaxUsers)=>this.sharepointUserGroupWebService.addUserCollectionToGroup(spTaxUsers,group["SpGrpName"],group.getSiteUrl()));
-		// }
-		return Promise.all([promiseOfAddedListItems,promiseOfSpTaxUser]).then((x)=> x[0]);	//return the first call's results for now.
+			return resultFirstPromise;
+		});	
 	}
 	
 	sortCriteriaForWorkers(a:WorkerEntry, b:WorkerEntry):number{
